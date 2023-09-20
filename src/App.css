@@ -1,0 +1,39 @@
+@import url(http://fonts.googleapis.com/css?family=Montserrat);
+
+* {
+ 
+  margin: 0;
+  padding: 3px;
+  box-sizing: border-box;
+  outline: none;
+  border: none;
+  font-size: 15px;
+  line-height: 2em;
+}
+.header {
+  font-family: 'Montserrat', Arial, Verdana;
+  
+  /* Add other specific styles for your header here */
+}
+
+.header {
+  text-align: center;
+}
+
+.dummy {
+  margin: 5px 106px; 
+}
+
+input[type="number"] {
+  border: 1px solid #ccc;
+  background-color: #fff;
+  padding: 5px;
+  font-size: 14px;
+ }
+
+select[type="select"] {
+  border: 1px solid #ccc;
+  background-color:  #fff;
+  padding: 5px;
+  font-size: 14px;
+}
