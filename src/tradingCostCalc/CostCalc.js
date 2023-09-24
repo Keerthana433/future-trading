@@ -24,8 +24,20 @@ export default function CostCalc() {
   const [direction, setDirection] = useState(0);
   const [isVisibleBtcPrice, setVisibleBtcPrice] = useState(false);
   const [orderPrice, setOrderPrice] = useState(0)
-  const [marketOrderPrice, setMarketOrderPrice] = useState(0)
+  const [marketOrderPrice, setMarketOrderPrice] = useState(0);
+  const [isVisibleMarketBtcPrice, setVisibleMarketBtcPrice] = useState(false);
+  const numberOfContracts = btcQuantity;
+  // const [openLoss, setOpenLoss] = useState(0);
+  
+  // const calculateOpenLoss = () => {
 
+  // }
+  console.log("numberOfContracts", numberOfContracts)
+  console.log("direction", direction)
+  console.log("marketOrderPrice", marketOrderPrice)
+  console.log("orderPrice", orderPrice)
+  const openLoss = numberOfContracts * Math.abs(Math.min(0, direction * (marketOrderPrice - orderPrice)))
+  console.log(openLoss)
   //1. Taken Initial amount 
   const handleInitialAmount = (event) => {
     setInitialValue(event.target.value)
@@ -34,7 +46,8 @@ export default function CostCalc() {
 
   //2. Getting orderType from user
   const handleOrderTypeChange = (e) => {
-    setButtonVisible(false)
+    setButtonVisible(false);
+    setBtcQuantity('')
     setOrderType(e.target.value);
     console.log("Inside the handleOrderType", orderType)
     setButtonVisible(e.target.value !== '');
@@ -94,7 +107,8 @@ export default function CostCalc() {
   }
 
   function marketBtcPrice() {
-    const getBtcPriceValue = btcPrice.toFixed(2);
+    setVisibleMarketBtcPrice(true);
+    const getBtcPriceValue = btcPrice;
     setMarketOrderPrice(getBtcPriceValue)
   }
 
@@ -115,7 +129,6 @@ export default function CostCalc() {
   useEffect(()=>{
     getDirectionValue();
     setOrderPrice(btcPrice);
-    marketBtcPrice()
   },[getorder])
 
   const handleOrderChange = (event) => {
@@ -134,9 +147,6 @@ export default function CostCalc() {
     }
   };
 
-  console.log("orderValue", getorder)
-  console.log("Direction", direction)
-  
   // function getDirectionValue() {
   //   console.log("getOrder", getorder)
   //   if(getorder === 'L'){
@@ -173,7 +183,7 @@ export default function CostCalc() {
       <div className="input-box">
         <label for="fname">Initial Balance in USDT<sup style={{ color: 'red' }}>*</sup>:</label>
         <input type="number" id="fname" name="fname" onChange={handleInitialAmount}></input>
-        {buttonVisible && <button type="submit" id="button" name="name" value="Next" onClick={handleAddOrder}> Add Order </button>}
+        {buttonVisible && <button type="submit" id="button" className="addOrder" value="Next" onClick={handleAddOrder}> Add Order </button>}
 
       </div>
       <br />
@@ -231,22 +241,23 @@ export default function CostCalc() {
             type="number"
             className="initialMargin"
             id= "initialMargin" readOnly/>
-          </label>
+          </label><br/><br />
           <label for="fname">Please select Long Order or Short Order (L/S):<sup style={{ color: 'red' }}>*</sup>:</label>
           <select type="select" name="orderType" id="orderType" value={getorder} onChange={handleOrderChange}>
                 <option value="">Select Order Type...</option>
                 <option value="L">Long Order</option>
                 <option value="S">Short Order</option>
-          </select>
-          </>): null}
-          <label>Mark Price of 1 BTC in USDT<sup style={{color: 'red'}}>*</sup>:
+          </select><br/><br />         
+          <button type="submit" onClick={marketBtcPrice}>Click Here Get Current Market Price 1 BTC/USDT</button><br/><br />
+          {isVisibleMarketBtcPrice && <label>Mark Price of 1 BTC in USDT<sup style={{color: 'red'}}>*</sup>:
             <input 
             type="number"
             name="BTCUSDT"
               id="btcInput"
               value={marketOrderPrice}
               readOnly />
-          </label>
+          </label>}
+          </>): null}
         </div>
       ))}
     </div>

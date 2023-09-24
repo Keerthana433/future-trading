@@ -1,7 +1,6 @@
 @import url(http://fonts.googleapis.com/css?family=Montserrat);
 
 * {
- 
   margin: 0;
   padding: 3px;
   box-sizing: border-box;
@@ -36,4 +35,8 @@ select[type="select"] {
   background-color:  #fff;
   padding: 5px;
   font-size: 14px;
+}
+
+.addOrder {
+  margin-left: 15px;
 }
