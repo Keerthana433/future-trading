@@ -9,7 +9,7 @@ const API_ENDPOINT = 'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT
 
 export default function CostCalc() {
 
-  const [btcPrice, setBtcPrice] = useState(null);
+  const [btcPrice, setBtcPrice] = useState(0);
   const [initialValue, setInitialValue] = useState(0);
   const [buttonVisible, setButtonVisible] = useState(false);
   const [orders, setOrders] = useState([]);
@@ -19,7 +19,7 @@ export default function CostCalc() {
   const [leverage, setLeverage] = useState(0);
   const [getNotionalValue, setNotionalValue] = useState(0);
   const [initialMargin, setInitialMargin] = useState(0)
-  const [inpdirection, setInpdirection] = useState(0);
+  const [inpdirection, setInpDirection] = useState('');
   const [getorder, setOrder] = useState('')
   const [direction, setDirection] = useState(0);
   const [isVisibleBtcPrice, setVisibleBtcPrice] = useState(false);
@@ -27,27 +27,58 @@ export default function CostCalc() {
   const [marketOrderPrice, setMarketOrderPrice] = useState(0);
   const [isVisibleMarketBtcPrice, setVisibleMarketBtcPrice] = useState(false);
   const numberOfContracts = btcQuantity;
-  // const [openLoss, setOpenLoss] = useState(0);
-  
-  // const calculateOpenLoss = () => {
+  const [askPrice, setAskPrice] = useState(0);
+  const [nextGoTo, setNextGoTo] = useState(false);
+  const [bidPrice, setBidPrice] = useState(0)
+  const [assumingPrice, setAssumingPrice] = useState(0);
 
-  // }
-  console.log("numberOfContracts", numberOfContracts)
-  console.log("direction", direction)
-  console.log("marketOrderPrice", marketOrderPrice)
-  console.log("orderPrice", orderPrice)
-  const openLoss = numberOfContracts * Math.abs(Math.min(0, direction * (marketOrderPrice - orderPrice)))
-  console.log(openLoss)
+  const openLoss = orderType === "L" || orderType === "S" ? (numberOfContracts * Math.abs(Math.min(0, direction * (marketOrderPrice - orderPrice)))).toFixed(2) : (btcQuantity * Math.abs(Math.min(0, direction * (marketOrderPrice - assumingPrice)))).toFixed(2);
+  const cost = (parseFloat(initialMargin) + parseFloat(openLoss)).toFixed(2);
+  const presentBalance = (parseFloat(initialValue) - parseFloat(cost)).toFixed(2)
+
+  //no_of_btc * abs( min ( 0, direction * ( mark_price - assuming_price )))
+  // const markOpenLoss = (btcQuantity * Math.abs(Math.min(0, direction * (marketOrderPrice - assumingPrice)))).toFixed(2);
+
   //1. Taken Initial amount 
   const handleInitialAmount = (event) => {
     setInitialValue(event.target.value)
     setButtonVisible(event.target.value !== '');
   }
 
+  const handleInputChange = (event) => {
+    setInpDirection(event.target.value);
+    setDirection(0);
+    setAssumingPrice(0);
+    setAskPrice(0);
+    setBidPrice(0);
+  };
+
+  const handleAskPriceChange = (event) => {
+    setAskPrice(parseFloat(event.target.value));
+  };
+
+  const handleBidPriceChange = (event) => {
+    setBidPrice(parseFloat(event.target.value));
+  };
+
+  const calculateAssumingPrice = () => {
+    if (inpdirection === 'L' || inpdirection === 'l') {
+      setDirection(1.0);
+    } else if (inpdirection === 'S' || inpdirection === 's') {
+      setDirection(-1.0);
+    }
+
+    if (direction === 1.0) {
+      setAssumingPrice(askPrice * (1.0 + 0.05 / 100.0));
+    } else {
+      setAssumingPrice(bidPrice);
+    }
+  };
+
   //2. Getting orderType from user
   const handleOrderTypeChange = (e) => {
     setButtonVisible(false);
-    setBtcQuantity('')
+    setBtcQuantity('');
     setOrderType(e.target.value);
     console.log("Inside the handleOrderType", orderType)
     setButtonVisible(e.target.value !== '');
@@ -103,7 +134,7 @@ export default function CostCalc() {
     // Display the current value from the btcPrice variable
     setVisibleBtcPrice(true)
     const inputValue = btcPrice.toFixed(2);
-    setBtcTakePrice(inputValue)    
+    setBtcTakePrice(inputValue)
   }
 
   function marketBtcPrice() {
@@ -117,7 +148,7 @@ export default function CostCalc() {
     setNotionalValue(notionalValue)
     console.log("notionalValue", notionalValue.toFixed(2))
     document.getElementById("notioalValue").value = notionalValue.toFixed(2)
-    
+
   }
 
   function calculateInitialMargin() {
@@ -125,15 +156,21 @@ export default function CostCalc() {
     setInitialMargin(initialMargin)
     document.getElementById("initialMargin").value = initialMargin.toFixed(2)
   }
+  const calculateMarketInitialMargin = () => {
+    const initialMargin = assumingPrice * btcQuantity / leverage
+    setInitialMargin(initialMargin);
+    document.getElementById("marketinitialmargin").value = initialMargin.toFixed(2)
+  }
 
-  useEffect(()=>{
+  useEffect(() => {
     getDirectionValue();
     setOrderPrice(btcPrice);
-  },[getorder])
+  }, [getorder])
 
   const handleOrderChange = (event) => {
     const orderValue = event.target.value;
     setOrder(orderValue);
+
   }
 
   // console.log('getorder', getorder)
@@ -188,7 +225,10 @@ export default function CostCalc() {
       </div>
       <br />
       {orders.map((order, index) => (
+        
         <div key={index}>
+          
+
           {(
             <div>
               <label for="fname">Limit order or Stop order or Market order (L/S/M)<sup style={{ color: 'red' }}>*</sup>:</label>
@@ -203,61 +243,150 @@ export default function CostCalc() {
 
             </div>
           )} <br />
-          {orderType ==="L" || orderType === "S" ?
-          (<>
-          <label>BTC Quantity<sup style={{ color: 'red' }}>*</sup>:
-            <input
-              type="number"
-              name="btcQuantity"
-              id="number"
-              value={btcQuantity}
-              onChange={(event) => setBtcQuantity(event.target.value)}
-            />
-          </label> <br /><br />
-          <button type="submit" onClick={takePrice}>Click Here Take Price for 1 BTC in USDT</button> <br /><br />
-          {isVisibleBtcPrice && <label> Order Price of 1 BTC in USDT<sup style={{ color: 'red' }}>*</sup>:
-            <input
-              type="number"
-              name="BTCUSDT"
-              id="btcInput"
-              value={takeBtcValue}
-              readOnly
-            />
-          </label>}<br /><br />
-          
-          <label>Leverage<sup style={{ color: 'red' }}>*</sup>:
-            <input
-              type="number"
-              className="leverage"
-              id="leverage"
-              onChange={(event) => setLeverage(event.target.value)} />
-          </label> <br /><br />
-          <button type="submit" onClick={calculateNotionalValue}>Get Notional Value</button><br /><br />
-          <label>Notional Value<sup style={{color: "red"}}>*</sup>
-          <input type="number" id="notioalValue" readOnly /></label><br /><br />
-          <button type="submit" onClick={calculateInitialMargin}>Get Initial Margin</button><br /><br />
-          <label>Initial Margin<sup style={{color: "red"}}>*</sup>
-            <input
-            type="number"
-            className="initialMargin"
-            id= "initialMargin" readOnly/>
-          </label><br/><br />
-          <label for="fname">Please select Long Order or Short Order (L/S):<sup style={{ color: 'red' }}>*</sup>:</label>
-          <select type="select" name="orderType" id="orderType" value={getorder} onChange={handleOrderChange}>
+          {orderType === "L" || orderType === "S" ?
+            (<>
+              <label>BTC Quantity<sup style={{ color: 'red' }}>*</sup>:
+                <input
+                  type="number"
+                  name="btcQuantity"
+                  id="number"
+                  value={btcQuantity}
+                  onChange={(event) => setBtcQuantity(event.target.value)}
+                />
+              </label> <br /><br />
+              <button type="submit" onClick={takePrice}>Click Here Take Price for 1 BTC in USDT</button> <br /><br />
+              {isVisibleBtcPrice && <label> Order Price of 1 BTC in USDT<sup style={{ color: 'red' }}>*</sup>:
+                <input
+                  type="number"
+                  name="BTCUSDT"
+                  id="btcInput"
+                  value={takeBtcValue}
+                  readOnly
+                />
+              </label>}<br /><br />
+
+              <label>Leverage<sup style={{ color: 'red' }}>*</sup>:
+                <input
+                  type="number"
+                  className="leverage"
+                  id="leverage"
+                  onChange={(event) => setLeverage(event.target.value)} />
+              </label> <br /><br />
+              <button type="submit" onClick={calculateNotionalValue}>Get Notional Value</button><br /><br />
+              <label>Notional Value<sup style={{ color: "red" }}>*</sup>
+                <input type="number" id="notioalValue" readOnly /></label><br /><br />
+              <button type="submit" onClick={calculateInitialMargin}>Get Initial Margin</button><br /><br />
+              <label>Initial Margin<sup style={{ color: "red" }}>*</sup>
+                <input
+                  type="number"
+                  className="initialMargin"
+                  id="initialMargin" readOnly />
+              </label><br /><br />
+              <label for="fname">Please select Long Order or Short Order (L/S):<sup style={{ color: 'red' }}>*</sup>:</label>
+              <select type="select" name="orderType" id="orderType" value={getorder} onChange={handleOrderChange}>
                 <option value="">Select Order Type...</option>
                 <option value="L">Long Order</option>
                 <option value="S">Short Order</option>
-          </select><br/><br />         
-          <button type="submit" onClick={marketBtcPrice}>Click Here Get Current Market Price 1 BTC/USDT</button><br/><br />
-          {isVisibleMarketBtcPrice && <label>Mark Price of 1 BTC in USDT<sup style={{color: 'red'}}>*</sup>:
-            <input 
-            type="number"
-            name="BTCUSDT"
-              id="btcInput"
-              value={marketOrderPrice}
-              readOnly />
-          </label>}
-          </>): null}
+              </select><br /><br />
+              <button type="submit" onClick={marketBtcPrice}>Click Here Get Current Market Price 1 BTC/USDT</button><br /><br />
+              {isVisibleMarketBtcPrice && (<div><label>Mark Price of 1 BTC in USDT<sup style={{ color: 'red' }}>*</sup>:
+                <input
+                  type="number"
+                  name="BTCUSDT"
+                  id="btcInput"
+                  value={marketOrderPrice}
+                  readOnly />
+              </label><br /><br />
+                <label> Open Loss :
+                  <input type="number" className="openLoss" id="openLoss" value={openLoss} readOnly />
+                </label><br /><br />
+                <label> Cost required to open a limit order or stop order:
+                  <input type="number" className="cost" id="cost" value={cost} readOnly />
+                </label><br /><br />
+                <label> Present Balance:
+                  <input type="number" className="cost" id="cost" value={presentBalance} readOnly />
+                </label></div>)}
+            </>) : orderType === "M" ?
+              (
+                <>
+                  <label for="fname">Please select Long Order or Short Order (L/S):<sup style={{ color: 'red' }}>*</sup>:</label>
+                  <select type="select" name="orderType" id="orderType" value={inpdirection} onChange={handleInputChange}>
+                    <option value="">Select Order Type...</option>
+                    <option value="L">Long Order</option>
+                    <option value="S">Short Order</option>
+                  </select>
+                  <br />
+
+                  <label>
+                    Ask Price:
+                    <input type="number" value={askPrice} onChange={handleAskPriceChange} />
+                  </label>
+                  <br />
+
+                  <label>
+                    Bid Price:
+                    <input type="number" value={bidPrice} onChange={handleBidPriceChange} />
+                  </label>
+                  <br />
+
+                  <button onClick={calculateAssumingPrice}>Calculate Assuming Price</button>
+                  <br />
+
+                  {direction !== 0 && (
+                    <p>
+                      Direction: {direction === 1.0 ? 'Long' : 'Short'}
+                    </p>
+                  )}
+
+                  {assumingPrice !== 0 && (
+                    <p>
+                      Assuming Price: {assumingPrice.toFixed(2)}
+                    </p>
+                  )}
+                  <label>BTC Quantity<sup style={{ color: 'red' }}>*</sup>:
+                    <input
+                      type="number"
+                      name="btcQuantity"
+                      id="number"
+                      value={btcQuantity}
+                      onChange={(event) => setBtcQuantity(event.target.value)}
+                    />
+                  </label>
+                  <br />
+                  <label>Leverage<sup style={{ color: 'red' }}>*</sup>:
+                    <input
+                      type="number"
+                      className="leverage"
+                      id="leverage"
+                      onChange={(event) => setLeverage(event.target.value)} />
+                  </label> <br />
+                  <button type="submit" onClick={calculateMarketInitialMargin}>Get Initial Margin</button><br /><br />
+                  <label>Initial Margin<sup style={{ color: "red" }}>*</sup>
+                    <input
+                      type="number"
+                      className="initialMargin"
+                      id="marketinitialmargin" readOnly />
+                  </label><br />
+                  <button type="submit" onClick={marketBtcPrice}>Click Here Get Current Market Price 1 BTC/USDT</button><br /><br />
+                  {isVisibleMarketBtcPrice && (<div><label>Mark Price of 1 BTC in USDT<sup style={{ color: 'red' }}>*</sup>:
+                    <input
+                      type="number"
+                      name="BTCUSDT"
+                      id="btcInput"
+                      value={marketOrderPrice}
+                      readOnly />
+                  </label><br /><br />
+                    <label> Open Loss :
+                      <input type="number" className="openLoss" id="openLoss" value={openLoss} readOnly />
+                    </label><br /><br />
+                    <label> Cost required to open a limit order or stop order:
+                      <input type="number" className="cost" id="cost" value={cost} readOnly />
+                    </label><br /><br />
+                    <label> Present Balance:
+                      <input type="number" className="cost" id="cost" value={presentBalance} readOnly />
+                    </label></div>)}
+                </>
+              ) : <></>}
         </div>
       ))}
     </div>
