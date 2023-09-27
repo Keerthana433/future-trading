@@ -31,6 +31,9 @@ export default function CostCalc() {
   const [nextGoTo, setNextGoTo] = useState(false);
   const [bidPrice, setBidPrice] = useState(0)
   const [assumingPrice, setAssumingPrice] = useState(0);
+  const [remainingOrders, setRemainingOrders] = useState(10);
+  const [showOrderType, setShowOrderType] = useState(false);
+  const [completedOrderCount, setCompletedOrderCount] = useState(0);
 
   const openLoss = orderType === "L" || orderType === "S" ? (numberOfContracts * Math.abs(Math.min(0, direction * (marketOrderPrice - orderPrice)))).toFixed(2) : (btcQuantity * Math.abs(Math.min(0, direction * (marketOrderPrice - assumingPrice)))).toFixed(2);
   const cost = (parseFloat(initialMargin) + parseFloat(openLoss)).toFixed(2);
@@ -89,10 +92,19 @@ export default function CostCalc() {
   const handleAddOrder = () => {
     document.getElementById('fname').disabled = true;
     document.getElementById('button').style.display = 'none'
-    if (orders.length < 10) {
-      setOrders([...orders, {}]); // Add an empty object to the orders array
-    }
-  };
+
+ setCompletedOrderCount(completedOrderCount + 1);
+
+//  if (completedOrderCount >= 10) {
+//    setOrderType('');
+   
+//    setCompletedOrderCount(0);
+//     // if (orders.length < 10) {
+//     //   setOrders([...orders, {}]); // Add an empty object to the orders array
+//     // }
+//   };
+}
+  
   // 4. Getting the 1 BTC in USDT Price from Binance WebSocket
   useEffect(() => {
     const socket = socketIOClient(SOCKET_ENDPOINT);
@@ -104,7 +116,7 @@ export default function CostCalc() {
       if (!isNaN(newPrice)) {
         setBtcPrice(newPrice);
       }
-    });
+          });
 
     // Fetch initial price
     fetchPrice();
@@ -183,7 +195,8 @@ export default function CostCalc() {
       setDirection(0);
     }
   };
-
+  console.log(completedOrderCount)
+  console.log(presentBalance)
   // function getDirectionValue() {
   //   console.log("getOrder", getorder)
   //   if(getorder === 'L'){
@@ -224,14 +237,14 @@ export default function CostCalc() {
 
       </div>
       <br />
-      {orders.map((order, index) => (
+      {/* {orders.map((order, index) => (
         
-        <div key={index}>
+        <div key={index}> */}
           
 
-          {(
+          {(completedOrderCount < 10 && presentBalance === presentBalance) && (
             <div>
-              <label for="fname">Limit order or Stop order or Market order (L/S/M)<sup style={{ color: 'red' }}>*</sup>:</label>
+              <label>Limit order or Stop order or Market order (L/S/M)<sup style={{ color: 'red' }}>*</sup>:</label>
               <select type="select" name="orderType" id="orderType" value={orderType} onChange={handleOrderTypeChange}>
                 <option value="">Select Order Type...</option>
                 <option value="L">Limit order</option>
@@ -282,7 +295,7 @@ export default function CostCalc() {
                   className="initialMargin"
                   id="initialMargin" readOnly />
               </label><br /><br />
-              <label for="fname">Please select Long Order or Short Order (L/S):<sup style={{ color: 'red' }}>*</sup>:</label>
+              <label>Please select Long Order or Short Order (L/S):<sup style={{ color: 'red' }}>*</sup>:</label>
               <select type="select" name="orderType" id="orderType" value={getorder} onChange={handleOrderChange}>
                 <option value="">Select Order Type...</option>
                 <option value="L">Long Order</option>
@@ -309,7 +322,7 @@ export default function CostCalc() {
             </>) : orderType === "M" ?
               (
                 <>
-                  <label for="fname">Please select Long Order or Short Order (L/S):<sup style={{ color: 'red' }}>*</sup>:</label>
+                  <label>Please select Long Order or Short Order (L/S):<sup style={{ color: 'red' }}>*</sup>:</label>
                   <select type="select" name="orderType" id="orderType" value={inpdirection} onChange={handleInputChange}>
                     <option value="">Select Order Type...</option>
                     <option value="L">Long Order</option>
@@ -388,10 +401,7 @@ export default function CostCalc() {
                 </>
               ) : <></>}
         </div>
-      ))}
-    </div>
+      // ))}
+    
   )
 }
-
-
-
