@@ -16,7 +16,7 @@ export default function CostCalc() {
   const [orderType, setOrderType] = useState('');
   const [btcQuantity, setBtcQuantity] = useState('');
   const [takeBtcValue, setBtcTakePrice] = useState(0);
-  const [leverage, setLeverage] = useState(0);
+  const [leverage, setLeverage] = useState(1);
   const [getNotionalValue, setNotionalValue] = useState(0);
   const [initialMargin, setInitialMargin] = useState(0)
   const [inpdirection, setInpDirection] = useState('');
@@ -112,7 +112,7 @@ export default function CostCalc() {
     socket.on('message', (message) => {
       const tradeData = JSON.parse(message);
       const newPrice = parseFloat(tradeData.p);
-
+      
       if (!isNaN(newPrice)) {
         setBtcPrice(newPrice);
       }
@@ -133,7 +133,7 @@ export default function CostCalc() {
   const fetchPrice = async () => {
     try {
       const response = await axios.get(API_ENDPOINT);
-      const price = parseFloat(response.data.price);
+            const price = parseFloat(response.data.price);
       if (!isNaN(price)) {
         setBtcPrice(price);
       }
@@ -213,13 +213,16 @@ export default function CostCalc() {
   //   setOrders(updatedOrders);
   // };
 
+    const handleLeverageChange = (event) => {
+      setLeverage(event.target.value);
+    };
+  
+
   return (
     <div className="container">
       <div className="header">
         <h5 className="firstHeader">Calculating cost for Perpetual Futures orders BTC/USDT</h5>
-        <h6 className="h6">[Rates are simulated and not as per current market]</h6>
-        <h6 className="h6" >Market price for 1 BTC in USDT used here   : {btcPrice ? `${btcPrice.toFixed(2)} USDT` : 0}</h6>
-        <h1>Bitcoin to USDT Converter</h1>
+        <h6 className="h6" >Market price for 1 BTC in USDT used here (Binance) : [{btcPrice ? `${btcPrice.toFixed(2)} USDT` : 0}]</h6>
       </div>
       {/* <div className="dummy">
         <p>Equivalent Value in USDT:</p>
@@ -249,7 +252,7 @@ export default function CostCalc() {
                 <option value="">Select Order Type...</option>
                 <option value="L">Limit order</option>
                 <option value="S">Stop order</option>
-                <option value="M">Mark order</option>
+                <option value="M">Market order</option>
               </select>
               {/* <input type="number" id="fname" name="fname" onChange={handleInitialAmount}></input> */}
               {/* {buttonVisible && <button type="submit" id="button" name="name" value="Next" onClick={()=> setButtonVisible(true)}> Next </button>} */}
@@ -263,6 +266,7 @@ export default function CostCalc() {
                   type="number"
                   name="btcQuantity"
                   id="number"
+                  min="0"
                   value={btcQuantity}
                   onChange={(event) => setBtcQuantity(event.target.value)}
                 />
@@ -283,7 +287,8 @@ export default function CostCalc() {
                   type="number"
                   className="leverage"
                   id="leverage"
-                  onChange={(event) => setLeverage(event.target.value)} />
+                  min="1"
+                  onChange={handleLeverageChange} />
               </label> <br /><br />
               <button type="submit" onClick={calculateNotionalValue}>Get Notional Value</button><br /><br />
               <label>Notional Value<sup style={{ color: "red" }}>*</sup>
@@ -307,7 +312,7 @@ export default function CostCalc() {
                   type="number"
                   name="BTCUSDT"
                   id="btcInput"
-                  value={marketOrderPrice}
+                  value={takeBtcValue}
                   readOnly />
               </label><br /><br />
                 <label> Open Loss :
